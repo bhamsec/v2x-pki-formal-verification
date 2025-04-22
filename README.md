@@ -1,4 +1,6 @@
-# Anonym Submission
+# anonymous-submission
+
+Anonymous repository for paper "Establishing Security Requirements for Automotive PKI: A Comprehensive Framework for Protocol Design and Implementation"
 
 
 
@@ -15,14 +17,14 @@ Already a pro? Just edit this README.md and make it your own. Want to make it ea
 
 ```
 cd existing_repo
-git remote add origin https://gitlab.com/ndss26/anonym-submission.git
+git remote add origin https://gitlab.com/ndss26/anonymous-submission.git
 git branch -M main
 git push -uf origin main
 ```
 
 ## Integrate with your tools
 
-- [ ] [Set up project integrations](https://gitlab.com/ndss26/anonym-submission/-/settings/integrations)
+- [ ] [Set up project integrations](https://gitlab.com/ndss26/anonymous-submission/-/settings/integrations)
 
 ## Collaborate with your team
 

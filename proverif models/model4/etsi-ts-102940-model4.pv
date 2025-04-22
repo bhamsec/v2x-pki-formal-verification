@@ -1,0 +1,868 @@
+
+
+(*	ETSI-TS 102940 v2.1.1 2021-07			*)
+(*	MODEL 1						*)
+(*	Authorization request without POP		*)
+(*	One attacker vehicle				*)
+(*	No timestamps checks				*)
+
+set ignoreTypes = false.
+(* set selFun = Nounifset. *)
+
+(*	TYPES						*)
+type pkey.
+type skey.
+type symkey.
+type hmackey.
+type certype.
+type enrcertype.
+type result.
+type timestamp.
+type hashcertype.
+type hashenrcertype.
+type hashkeytype.
+
+
+(*	FREE TERMS					*)
+free ch:channel.
+free rootca_sk:skey [private].
+free attvid:bitstring.
+free att_sk:skey.
+
+
+(*	CONSTANTS					*)
+const EA:bitstring.
+const AA:bitstring.
+const SELF:bitstring.
+const RESPONSE_CODE_0_ENR:bitstring.
+const RESPONSE_CODE_0_AUTH:bitstring.
+const RESPONSE_CODE_0_AUTHVAL:bitstring.
+const RESPONSE_CODE_1_ENR:bitstring.
+const RESPONSE_CODE_1_AUTH:bitstring.
+const RESPONSE_CODE_1_AUTHVAL:bitstring.
+const NULL_SYMK:bitstring.
+const NULL_PK:pkey.
+const NULL_CERT:certype.
+const NULL_STRING:bitstring.
+const ERROR_negative_response_from_ea:bitstring.
+const ERROR_wrong_signature_or_hash:bitstring.
+const ERROR_enrolled_not_found:bitstring.
+const ERROR_wrong_singatures_enrollment:bitstring.
+const ERROR_registered_not_found:bitstring.
+const AT_cert:bitstring.
+const ENR_cert:bitstring.
+
+
+(*	EVENTS						*)
+event ValidEnrollmentCertReceived(skey, enrcertype).
+event ValidEnrollmentCertSent(enrcertype).
+event ValidAuthorizationTicketReceived(skey, certype).
+event ValidAuthorizationTicketReceived2(enrcertype, certype).
+event ValidAuthorizationTicketReceived3(enrcertype, bitstring).
+event ErrorMessage(bitstring).
+event VehicleEnrolmentRequestSent(bitstring).
+event VehicleEnrolmentResponseReceived(bitstring).
+event EAEnrolmentRequestReceived(bitstring).
+event EAEnrolmentResponseSent(bitstring).
+event VehicleAuthorizationRequestSent(bitstring).
+event AAAuthorizationRequestReceived(bitstring).
+event AAAuthorizationValidationRequestSent(bitstring).
+event EAAuthorizationValidationRequestReceived(bitstring).
+event EAAuthorizationValidationResponseSent(bitstring).
+event AAAuthorizationValidationResponseReceived(bitstring).
+event AAAuthorizationResponseSent(bitstring).
+event VehicleAuthorizationResponseReceived(bitstring).
+event ValidATRequestReceived(bitstring).
+event ATRequestSent(bitstring).
+event ValidEnrollmentCertSentVehicle(enrcertype, bitstring).
+event V2XMessageSent1(bitstring, skey, certype).
+event V2XMessageReceived1(bitstring, pkey, certype).
+event V2XMessageSent2(bitstring, skey).
+event V2XMessageReceived2(bitstring, pkey).
+event V2XMessageReceived3(bitstring, pkey, bitstring).
+event RestrictionEvent(bitstring, bitstring).
+event AntiReplayAuthRequest(bitstring, bitstring).
+event AntiReplayAuthValidationRequest(bitstring, bitstring).
+event ValidAuthorizationTicketSent(certype, bitstring).
+event ValidAuthorizationValidationConfirmationSent(enrcertype, bitstring).
+event EAEnrolmentRequestReceived2(bitstring, bitstring).
+event VehicleEnrolmentRequestSent2(bitstring, bitstring).
+event ValidATRequestReceived2(bitstring, enrcertype).
+event ValidATResponseReceived(bitstring).
+event ValidATSent(bitstring, pkey, bitstring).
+event ValidATSent2(certype).
+event ATResponseSent(bitstring).
+event EnrolmentCertificateReceived(enrcertype, bitstring, pkey, pkey).
+event ValidEnrollmentCertSent2(enrcertype,  pkey).
+event ValidEnrollmentCertSent3(enrcertype, bitstring).
+event AuthorisationTicketReceived(certype, pkey).
+event AuthorisationTicketReceived2(certype, bitstring).
+event EAAuthorizingAT(enrcertype, bitstring).
+
+
+(*	CRYPTOGRAPHIC FUNCTIONS				*)
+
+(* Asymmetric digital signature *)
+fun pk(skey):pkey.
+fun sign(bitstring, skey):bitstring.
+fun ok():result.
+reduc forall m:bitstring, sk:skey; checksign(sign(m, sk), m, pk(sk)) = ok().
+
+(* Asymmetric encryption for key *)
+fun aenc_key(symkey, pkey):bitstring.
+reduc forall k:symkey, sk:skey; adec_key(aenc_key(k, pk(sk)), sk) = k.
+
+(* Symmetric encryption *)
+fun senc(bitstring, symkey):bitstring.
+reduc forall m:bitstring, k: symkey; sdec(senc(m, k), k) = m.
+
+(* Certificate *)
+fun cert(bitstring, pkey, pkey, skey, bitstring):certype.
+reduc forall vid:bitstring, vpk:pkey, encpk:pkey, sk:skey, ctype:bitstring; checkcert(cert(vid, vpk, encpk, sk, ctype), pk(sk)) = ok().
+reduc forall vid:bitstring, vpk:pkey, encpk:pkey, sk:skey, ctype:bitstring; getverpk(cert(vid, vpk, encpk, sk, ctype)) = vpk.
+reduc forall vid:bitstring, vpk:pkey, encpk:pkey, sk:skey, ctype:bitstring; getencpk(cert(vid, vpk, encpk, sk, ctype)) = encpk.
+reduc forall vid:bitstring, vpk:pkey, encpk:pkey, sk:skey, ctype:bitstring; getid(cert(vid, vpk, encpk, sk, ctype)) = vid.
+reduc forall vid:bitstring, vpk:pkey, encpk:pkey, sk:skey, ctype:bitstring; gettype(cert(vid, vpk, encpk, sk, ctype)) = ctype.
+
+(* Enrollment certificate *)
+fun enrcert(bitstring, pkey, pkey, skey, bitstring):enrcertype.
+reduc forall vid:bitstring, vpk:pkey, encpk:pkey, sk:skey, ctype:bitstring; checkenrcert(enrcert(vid, vpk, encpk, sk, ctype), pk(sk)) = ok().
+reduc forall vid:bitstring, vpk:pkey, encpk:pkey, sk:skey, ctype:bitstring; getenrverpk(enrcert(vid, vpk, encpk, sk, ctype)) = vpk.
+reduc forall vid:bitstring, vpk:pkey, encpk:pkey, sk:skey, ctype:bitstring; getenrencpk(enrcert(vid, vpk, encpk, sk, ctype)) = encpk.
+reduc forall vid:bitstring, vpk:pkey, encpk:pkey, sk:skey, ctype:bitstring; getenrid(enrcert(vid, vpk, encpk, sk, ctype)) = vid.
+reduc forall vid:bitstring, vpk:pkey, encpk:pkey, sk:skey, ctype:bitstring; getenrtype(enrcert(vid, vpk, encpk, sk, ctype)) = ctype.
+
+(* Hash *)
+fun hash(bitstring):bitstring.
+
+(* Hash key *)
+fun hash_key(symkey):hashkeytype.
+
+(* Hash pkey *)
+fun hash_pkey(pkey):bitstring.
+
+(* Hash certificate *)
+fun hash_cert(certype):hashcertype.
+
+(* Hash enrolment certificate *)
+fun hash_enrcert(enrcertype):hashenrcertype.
+
+(* Hmac *)
+fun hmac(bitstring,hmackey):bitstring.
+
+(* Pseudo-id *)
+fun pseudoid(bitstring):bitstring.
+
+axiom nonce1:bitstring, nonce2:bitstring, x:bitstring;
+	event(RestrictionEvent(nonce1, x)) && event(RestrictionEvent(nonce2, x)) ==> nonce1 = nonce2.
+
+(* Timestamps *)
+fun inc(timestamp):timestamp [data].
+pred greater(timestamp, timestamp).
+clauses
+  forall x:timestamp; greater(inc(x),x);
+  forall x:timestamp, y:timestamp; greater(x,y) -> greater(inc(x), y).
+
+
+(* Anti-replay axioms *)
+
+axiom nonce1:bitstring, nonce2:bitstring, x:bitstring;
+	event(AntiReplayAuthRequest(nonce1, x)) && event(AntiReplayAuthRequest(nonce2, x)) ==> nonce1 = nonce2.
+
+axiom nonce1:bitstring, nonce2:bitstring, x:bitstring;
+	event(AntiReplayAuthValidationRequest(nonce1, x)) && event(AntiReplayAuthValidationRequest(nonce2, x)) ==> nonce1 = nonce2.
+  
+
+
+(*	QUERIES						*)
+
+(* 	AUTHENTICATION AND REPLAY			*)
+
+(* Authentication of the vehicle to the EA in the Enrolment request *)
+query m:bitstring, vid:bitstring; 
+event(EAEnrolmentRequestReceived2(m, vid)) ==> event(VehicleEnrolmentRequestSent2(m, vid)) || vid = attvid.
+query m:bitstring, vid:bitstring; 
+inj-event(EAEnrolmentRequestReceived2(m, vid)) ==> inj-event(VehicleEnrolmentRequestSent2(m, vid)) || vid = attvid.
+
+(* Authentication of the EA to the vehicle in the Enrolment respose *)
+query m:bitstring; event(VehicleEnrolmentResponseReceived(m)) ==> event(EAEnrolmentResponseSent(m)).
+query m:bitstring; inj-event(VehicleEnrolmentResponseReceived(m)) ==> inj-event(EAEnrolmentResponseSent(m)). 
+
+(* Authentication of the vehicle to the AA in the Authorization request - expected to be false (not designed in the protocol) *)
+query m:bitstring; event(AAAuthorizationRequestReceived(m)) ==> event(VehicleAuthorizationRequestSent(m)).
+query m:bitstring; inj-event(AAAuthorizationRequestReceived(m)) ==> inj-event(VehicleAuthorizationRequestSent(m)).
+
+(* Authentication of the vehicle to the EA in the Authorization request *)
+query at_req:bitstring, venrcert:enrcertype; 
+event(ValidATRequestReceived2(at_req, venrcert)) ==> event(ATRequestSent(at_req)) || event(ValidEnrollmentCertSentVehicle(venrcert, attvid)).
+query at_req:bitstring, venrcert:enrcertype; 
+inj-event(ValidATRequestReceived2(at_req, venrcert)) ==> inj-event(ATRequestSent(at_req)) || inj-event(ValidEnrollmentCertSentVehicle(venrcert, attvid)). 
+
+(* Authentication of the AA to the vehicle in the Authorization response *)
+query m:bitstring; event(VehicleAuthorizationResponseReceived(m)) ==> event(AAAuthorizationResponseSent(m)).
+query m:bitstring; inj-event(VehicleAuthorizationResponseReceived(m)) ==> inj-event(AAAuthorizationResponseSent(m)).
+
+(* Authentication of the AA to the EA in the AuthorizationValidation request *)
+query m:bitstring; event(EAAuthorizationValidationRequestReceived(m)) ==> event(AAAuthorizationValidationRequestSent(m)).
+query m:bitstring; inj-event(EAAuthorizationValidationRequestReceived(m)) ==> inj-event(AAAuthorizationValidationRequestSent(m)).
+
+(* Authentication of the EA to the AA in the AuthorizationValidation response *)
+query m:bitstring; event(AAAuthorizationValidationResponseReceived(m)) ==> event(EAAuthorizationValidationResponseSent(m)).
+query m:bitstring; inj-event(AAAuthorizationValidationResponseReceived(m)) ==> inj-event(EAAuthorizationValidationResponseSent(m)).
+
+(* Authentication of the vehicle in the V2X message *)
+query m:bitstring, atsk:skey; event(V2XMessageReceived2(m, pk(atsk))) ==> event(V2XMessageSent2(m, atsk)).  (* This is false because the attacker has a malicious vehicle, so it can send v2x messages*)
+query m:bitstring; event(V2XMessageReceived2(m, pk(new v_atversk))) ==> event(V2XMessageSent2(m, new v_atversk)).
+query m:bitstring; inj-event(V2XMessageReceived2(m, pk(new v_atversk))) ==> inj-event(V2XMessageSent2(m, new v_atversk)).
+
+
+(* Uniqueness PubEnr *)
+(* Cannot receive two different CertEnrs with the same pubkey *)
+query v_enrcert1:enrcertype, enrid1:bitstring, enrverpk:pkey, enrencpk: pkey, v_enrcert2:enrcertype, enrid2:bitstring; event(EnrolmentCertificateReceived(v_enrcert1, enrid1, enrverpk, enrencpk)) && event(EnrolmentCertificateReceived(v_enrcert2, enrid2, enrverpk, enrencpk)) ==> v_enrcert1 = v_enrcert2.
+
+(* EA does not issue two different CertEnrs with the same pubkey *)
+query v_enrcert1:enrcertype, v_enrcert2:enrcertype, enrverpk:pkey;
+event(ValidEnrollmentCertSent2(v_enrcert1, enrverpk)) && event(ValidEnrollmentCertSent2(v_enrcert2, enrverpk))
+==> v_enrcert1 = v_enrcert2.
+
+(* Anonymity - secrecy vid *)
+query attacker(new vid).
+
+(* CertEnr issued by the EA *)
+query v_sk:skey, v_enrcert:enrcertype, enrpk:pkey; 
+  inj-event(ValidEnrollmentCertReceived(v_sk, v_enrcert)) ==> inj-event(ValidEnrollmentCertSent2(v_enrcert,  enrpk)).
+
+(* Uniqueness pseudoid in Certenr *)
+(* Cannot receive two different CertEnrs with the same pseudoid *)
+query v_enrcert1:enrcertype, enrid:bitstring, enrverpk1:pkey, enrencpk1:pkey, v_enrcert2:enrcertype, enrverpk2:pkey, enrencpk2:pkey; event(EnrolmentCertificateReceived(v_enrcert1, enrid, enrverpk1, enrencpk1)) && event(EnrolmentCertificateReceived(v_enrcert2, enrid, enrverpk2, enrencpk2)) ==> v_enrcert1 = v_enrcert2.
+
+(* EA does not issue two different CertEnrs with the same pseudoid *)
+query v_enrcert1:enrcertype, v_enrcert2:enrcertype, pseudoid:bitstring;
+event(ValidEnrollmentCertSent3(v_enrcert1, pseudoid)) && event(ValidEnrollmentCertSent3(v_enrcert2, pseudoid))
+==> v_enrcert1 = v_enrcert2.
+
+(* PoP and uniqueness PubAT *)
+(* Attacker does not know the priAT - true *)
+query attacker(new v_atversk).
+query pseudoid1:bitstring, pseudoid2:bitstring, atverpk:pkey, authreq1:bitstring, authreq2:bitstring; 
+event(ValidATSent(pseudoid1, atverpk, authreq1)) 
+&& event(VehicleAuthorizationRequestSent(authreq1)) (* The request should come from a hobest vehicle *)
+&& event(ValidATSent(pseudoid2, atverpk, authreq2)) ==> pseudoid1 = pseudoid2.
+
+(* Secrecy CertEnr *)
+query attacker(pk(new v_enrsk)).
+
+(* Secrecy AT before usage *)
+query at:certype, m:bitstring; event(AuthorisationTicketReceived(at, pk(new v_atversk))) ==> event(V2XMessageSent2(m, new v_atversk)).
+
+(* Services conf authorised by the EA *)
+query enrcert:enrcertype, attributes:bitstring; 
+event(ValidAuthorizationTicketReceived3(enrcert, attributes)) ==> event(EAAuthorizingAT(enrcert, attributes)).
+
+(* AT issued by the AA *)
+query v_sk:skey, at:certype; 
+  inj-event(ValidAuthorizationTicketReceived(v_sk, at)) ==> inj-event(ValidATSent2(at)).
+
+
+(* Uniqueness pseudoid in AT *)
+(* Cannot receive two different ATs with the same pseudoid *)
+query atid:bitstring, at1:certype, at2:certype; 
+event(AuthorisationTicketReceived2(at1, atid)) && event(AuthorisationTicketReceived2(at2, atid)) ==> at1 = at2.
+
+
+
+
+
+
+(* 	PROTOCOL MODEL					*)
+
+
+let AuthorisedVehicle(v_atversk:skey, v_atencsk:skey, v_atcert:certype) =
+  
+  (* Prepare the v2x message *)
+  new v2xm:bitstring;
+
+  event V2XMessageSent1(v2xm, v_atversk, v_atcert);
+  event V2XMessageSent2(v2xm, v_atversk);
+  out(ch, (v2xm, sign(v2xm, v_atversk), v_atcert))
+.
+
+
+let VerifyV2XMessage(aa_cert:certype, serviceattributes:bitstring) = 
+  
+  (* Receive the v2x message *)
+  in(ch, (v2xm:bitstring, sign_v2xm:bitstring, atcert:certype));
+
+  (* Check signature *)
+  if checksign(sign_v2xm, v2xm, getverpk(atcert)) = ok() then
+
+  (* Verify at *)
+  if checkcert(atcert, getverpk(aa_cert)) = ok() then
+  if gettype(atcert) = serviceattributes then
+
+  event V2XMessageReceived1(v2xm, getverpk(atcert), atcert);
+  event V2XMessageReceived2(v2xm, getverpk(atcert));
+  event V2XMessageReceived3(v2xm, getverpk(atcert), getid(atcert))
+.
+
+
+(* Function to check uniqueness of PubEnr *)
+let UniquenessCertEnr(ea_cert: certype) = 
+
+  in(ch, v_enrcert:enrcertype);
+  (* Check received certificate *)
+  if checkenrcert(v_enrcert, getverpk(ea_cert)) = ok() then
+  if getenrtype(v_enrcert) = ENR_cert then
+
+  let enrid = getenrid(v_enrcert) in
+  let enrverpk = getenrverpk(v_enrcert) in
+  let enrencpk = getenrencpk(v_enrcert) in
+
+  event EnrolmentCertificateReceived(v_enrcert, enrid, enrverpk, enrencpk);  
+  0.
+
+
+let ValidATReceived(aa_cert:certype) = 
+ 
+  in(ch, at:certype);
+  if checkcert(at, getverpk(aa_cert)) = ok() then
+
+  let atverpk = getverpk(at) in
+  let atencpk = getencpk(at) in
+  let atid = getid(at) in
+  let atservice = gettype(at) in
+  
+  event AuthorisationTicketReceived(at, atverpk);
+  event AuthorisationTicketReceived2(at, atid);
+  0.
+
+
+let EnrolledVehicle(v_enrsk:skey, v_enrcert:enrcertype, ea_cert:certype, aa_cert:certype, starttime:timestamp, attributes:bitstring) = 
+
+  (* Authorization request *)
+  new v_atversk:skey;
+  new v_atencsk:skey;
+  new hmac_key:hmackey;
+
+  let keytag = hmac((pk(v_atversk), pk(v_atencsk)), hmac_key) in
+  let shared_at_request = (ea_cert, keytag, attributes) in
+
+  new gentime:timestamp;
+  (* let gentime = inc(starttime) in *)
+  let tbsdata = (gentime, hash(shared_at_request)) in
+  let etsi_data_signed_external_payload = (tbsdata, hash_enrcert(v_enrcert), sign(tbsdata, v_enrsk)) in
+
+  new k2:symkey;
+  let recipients = (hash_cert(ea_cert), aenc_key(k2, getencpk(ea_cert))) in
+  let etsi_data_encrypted = (recipients, senc(etsi_data_signed_external_payload, k2)) in
+
+  let publickeys = (pk(v_atversk), pk(v_atencsk)) in
+  let inner_at_request = (publickeys, hmac_key, shared_at_request, etsi_data_encrypted) in
+
+  let etsi_data = (inner_at_request) in
+
+  let gentime2 = inc(gentime) in
+  let tbsdata2 = (gentime2, etsi_data) in
+  let etsi_data_signed2 = (tbsdata2, SELF, sign(tbsdata2, v_atversk)) in
+
+  new k3:symkey;
+  let recipients3 = (hash_cert(aa_cert), aenc_key(k3, getencpk(aa_cert))) in
+  let etsi_data_encrypted3 = (recipients3, senc(etsi_data_signed2, k3)) in
+
+  event ATRequestSent(shared_at_request);
+  event VehicleAuthorizationRequestSent(etsi_data_encrypted3);
+  out(ch, etsi_data_encrypted3);
+
+  in(ch, etsi_data_encrypted_tov:bitstring);
+
+  let (recipient_tov:bitstring, senc_etsi_data_signed_tov:bitstring) = etsi_data_encrypted_tov in
+  let (hash_k3:hashkeytype, =NULL_SYMK) = recipient_tov in
+  if hash_key(k3) = hash_k3 then
+  
+  (* Decrypt the message *)
+  let etsi_data_signed_tov = sdec(senc_etsi_data_signed_tov, k3) in
+
+  let (tbsdata_tov:bitstring, hash_aa_cert:hashcertype, sign_tbsdata_tov:bitstring) = etsi_data_signed_tov in
+  (* Check hash of the aa_cert *)
+  if hash_cert(aa_cert) = hash_aa_cert then
+  (* Verify signature on tbsdata_tov *)
+  if checksign(sign_tbsdata_tov, tbsdata_tov, getverpk(aa_cert)) = ok() then
+
+  let (gentime_tov:timestamp, etsi_data_tov:bitstring) = tbsdata_tov in
+  let (authorization_response:bitstring) = etsi_data_tov in
+  let (hash_etsi_data_encrypted3:bitstring, =RESPONSE_CODE_0_AUTH, v_atcert:certype) = authorization_response in
+
+  (* Check the hash *)
+  if hash(etsi_data_encrypted3) = hash_etsi_data_encrypted3 then
+  (* Verify timestamp *)
+  (* if greater(gentime_tov, gentime2) then *)
+
+  event VehicleAuthorizationResponseReceived(etsi_data_encrypted_tov);
+
+  (* Check the at certificate *)
+  if checkcert(v_atcert, getverpk(aa_cert)) = ok() then
+  if getverpk(v_atcert) = pk(v_atversk) then
+  if getencpk(v_atcert) = pk(v_atencsk) then
+  if gettype(v_atcert) = attributes then
+
+  (* Received a correct authorization ticket *)
+  event ValidAuthorizationTicketReceived(v_enrsk, v_atcert);
+  event ValidAuthorizationTicketReceived2(v_enrcert, v_atcert);
+  event ValidAuthorizationTicketReceived3(v_enrcert, gettype(v_atcert));
+  event ValidATResponseReceived(shared_at_request);
+
+  !AuthorisedVehicle(v_atversk, v_atencsk, v_atcert)
+.
+
+
+
+let AA_Vehicle_EA(aa_versk:skey, aa_encsk:skey, aa_cert:certype) =
+
+  in(ch, etsi_data_encrypted3:bitstring);
+  new nonce:bitstring;
+  event AntiReplayAuthRequest(nonce, etsi_data_encrypted3);
+
+  let (recipients3:bitstring, enc_etsi_data_signed2:bitstring) = etsi_data_encrypted3 in
+  let (hash_aa_cert:hashcertype, enc_k3:bitstring) = recipients3 in
+  (* Check hash of the recipient *)
+  if hash_aa_cert = hash_cert(aa_cert) then
+  (* Decrypt the symmetric session key *)
+  let k3 = adec_key(enc_k3, aa_encsk) in
+  
+  (* Decrypt the message *)
+  let etsi_data_signed2 = sdec(enc_etsi_data_signed2, k3) in
+
+  let (tbsdata2:bitstring, =SELF, sign_tbsdata2:bitstring) = etsi_data_signed2 in
+  let (gentime2:timestamp, etsi_data:bitstring) = tbsdata2 in
+  let (inner_at_request:bitstring) = etsi_data in
+  let (publickeys:bitstring, hmac_key:hmackey, shared_at_request:bitstring, etsi_data_encrypted:bitstring) = inner_at_request in
+
+  let (v_atverpk':pkey, v_atencpk':pkey) = publickeys in
+  (* Verify signature on tbsdata2 *)
+  if checksign(sign_tbsdata2, tbsdata2, v_atverpk') = ok() then
+
+  let (rec_ea_cert:certype, keytag:bitstring, attributes:bitstring) = shared_at_request in
+  (* Check received certificate *)
+  if checkcert(rec_ea_cert, pk(rootca_sk)) = ok() then
+  if getid(rec_ea_cert) = EA then
+  (* Check keytag *)
+  if hmac(publickeys, hmac_key) = keytag then
+
+  event AAAuthorizationRequestReceived(etsi_data_encrypted3);
+  
+  (* Prepare the Authorization validation request for the ea *)
+  let authorization_validation_request = (etsi_data_encrypted, shared_at_request) in
+  let etsi_data_toea = (authorization_validation_request) in
+  
+  (* let gentime_toea = inc(gentime2) in *)
+  new gentime_toea:timestamp;
+  let tbsdata_toea = (gentime_toea, etsi_data_toea) in
+  let etsi_data_signed_toea = (tbsdata_toea, hash_cert(aa_cert), sign(tbsdata_toea, aa_versk)) in
+
+  new k4:symkey;
+  let recipient_toea = (hash_cert(rec_ea_cert), aenc_key(k4, getencpk(rec_ea_cert))) in
+  let etsi_data_encrypted_toea = (recipient_toea, senc(etsi_data_signed_toea, k4)) in
+
+  event AAAuthorizationValidationRequestSent(etsi_data_encrypted_toea);
+  out(ch, etsi_data_encrypted_toea);
+
+
+  (* Get Authorization validation response from EA *)
+  in(ch, etsi_data_encrypted_toaa:bitstring);
+
+  let (recipient_toaa:bitstring, enc_etsi_data_signed_toaa:bitstring) = etsi_data_encrypted_toaa in
+  let (hash_k4: hashkeytype, =NULL_SYMK) = recipient_toaa in
+  (* Check hash k4 *)
+  if hash_key(k4) = hash_k4 then
+  
+  (* Decrypt the message *)
+  let etsi_data_signed_toaa = sdec(enc_etsi_data_signed_toaa, k4) in
+  
+  let (tbsdata_toaa:bitstring, hash_ea_cert:hashcertype, sign_tbsdata_toaa:bitstring) = etsi_data_signed_toaa in
+  (* Check hash of the ea_cert *)
+  if hash_cert(rec_ea_cert) = hash_ea_cert then
+  (* Verify signature on tbsdata_toaa *)
+  if checksign(sign_tbsdata_toaa, tbsdata_toaa, getverpk(rec_ea_cert)) = ok() then
+
+  let (gentime_toaa:timestamp, etsi_data_toaa:bitstring) = tbsdata_toaa in
+  let (authorization_validation_response:bitstring) = etsi_data_toaa in
+  let (hash_etsi_data_encrypted_toea:bitstring, responsecode:bitstring, confirmedattributes:bitstring) = authorization_validation_response in
+
+  (* Verify timestamp *)
+  (* if greater(gentime_toaa, gentime_toea) then *)
+
+  if hash(etsi_data_encrypted_toea) = hash_etsi_data_encrypted_toea then
+
+  event AAAuthorizationValidationResponseReceived(etsi_data_encrypted_toaa);
+
+  if responsecode = RESPONSE_CODE_0_AUTHVAL then (
+  	(* Prepare Authorization response for the vehicle *)
+  
+  	new v_pseudoid:bitstring;
+  	let v_atcert = cert(v_pseudoid, v_atverpk', v_atencpk', aa_versk, confirmedattributes) in
+	(* out(ch, v_atcert); *)
+
+  	let authorization_response = (hash(etsi_data_encrypted3), RESPONSE_CODE_0_AUTH, v_atcert) in
+
+  	let etsi_data_tov = (authorization_response) in
+  
+	new gentime_tov:timestamp;
+  	(* let gentime_tov = inc(gentime_toaa) in *)
+  	let tbsdata_tov = (gentime_tov, etsi_data_tov) in
+  	let etsi_data_signed_tov = (tbsdata_tov, hash_cert(aa_cert), sign(tbsdata_tov, aa_versk)) in
+
+  	let recipient_tov = (hash_key(k3), NULL_SYMK) in
+  	let etsi_data_encrypted_tov = (recipient_tov, senc(etsi_data_signed_tov, k3)) in
+
+	event AAAuthorizationResponseSent(etsi_data_encrypted_tov);
+	event ValidAuthorizationTicketSent(v_atcert, authorization_validation_request);
+	event ValidATSent(v_pseudoid, v_atverpk', etsi_data_encrypted3);
+	event ValidATSent2(v_atcert);
+  	out(ch, etsi_data_encrypted_tov);
+	0
+  ) (* else (
+	(* ERROR: received negative response from the EA *)
+	(* Prepare negative response for the vehicle *)
+	event ErrorMessage(ERROR_negative_response_from_ea);
+	let authorization_response = (hash(etsi_data_encrypted3), RESPONSE_CODE_1_AUTH, NULL_CERT) in
+
+	let etsi_data_tov = (authorization_response) in
+  
+  	let gentime_tov = inc(gentime_toaa) in
+  	let tbsdata_tov = (gentime_tov, etsi_data_tov) in
+  	let etsi_data_signed_tov = (tbsdata_tov, hash_cert(aa_cert), sign(tbsdata_tov, aa_versk)) in
+
+  	let recipient_tov = (hash_key(k3), NULL_SYMK) in
+  	let etsi_data_encrypted_tov = (recipient_tov, senc(etsi_data_signed_tov, k3)) in
+
+	event AAAuthorizationResponseSent(etsi_data_encrypted_tov);
+  	out(ch, etsi_data_encrypted_tov);
+	0
+  ) *)
+.
+
+
+let EA_AA(ea_versk:skey, ea_encsk:skey, ea_cert:certype, v_enrcert:enrcertype, vid:bitstring, vprofile:bitstring, aa_cert:certype) =
+
+  in(ch, etsi_data_encrypted_toea:bitstring);
+
+  new nonce:bitstring;
+  event AntiReplayAuthValidationRequest(nonce, etsi_data_encrypted_toea);
+
+  let (recipient_toea:bitstring, enc_etsi_data_signed_toea:bitstring) = etsi_data_encrypted_toea in
+  let (hash_ea_cert:hashcertype, enc_k4:bitstring) = recipient_toea in
+  (* Check hash of the recipient *)
+  if hash_cert(ea_cert) = hash_ea_cert then
+  (* Decrypt the symmetric session key *)
+  let k4 = adec_key(enc_k4, ea_encsk) in
+
+  (* Decrypt the message *)
+  let etsi_data_signed_toea = sdec(enc_etsi_data_signed_toea, k4) in
+
+  let (tbsdata_toea:bitstring, hash_aa_cert:hashcertype, sign_tbsdata_toea:bitstring) = etsi_data_signed_toea in
+  (* Check hash of the aa_cert *) 
+  if hash_cert(aa_cert) = hash_aa_cert then
+
+  let (gentime_toea:timestamp, etsi_data_toea:bitstring) = tbsdata_toea in
+  let (authorization_validation_request:bitstring) = etsi_data_toea in
+  let (etsi_data_encrypted:bitstring, shared_at_request:bitstring) = authorization_validation_request in
+
+  let (=ea_cert, keytag:bitstring, attributes:bitstring) = shared_at_request in
+  let (recipients:bitstring, enc_etsi_data_signed_external_payload:bitstring) = etsi_data_encrypted in
+  let (=hash_ea_cert, enc_k2:bitstring) = recipients in
+
+  (* Verify signature on tbsdata_toea *)
+  if checksign(sign_tbsdata_toea, tbsdata_toea, getverpk(aa_cert)) = ok() then
+
+  event EAAuthorizationValidationRequestReceived(etsi_data_encrypted_toea);
+
+  (* Decrypt the symmetric session key *)
+  let k2 = adec_key(enc_k2, ea_encsk) in
+
+  (* Decrypt the message *)
+  let etsi_data_signed_external_payload = sdec(enc_etsi_data_signed_external_payload, k2) in
+
+  let (tbsdata:bitstring, hash_v_enrcert:hashenrcertype, sign_tbsdata:bitstring) = etsi_data_signed_external_payload in
+  let (gentime:timestamp, hash_shared_at_request:bitstring) = tbsdata in
+  
+  (* Retrieve vehicle enrollment cert from the DB *)
+  if hash_v_enrcert = hash_enrcert(v_enrcert) then (
+
+  	(* Verify vehicle signature on tbsdata *)
+  	if checksign(sign_tbsdata, tbsdata, getenrverpk(v_enrcert)) = ok() &&
+  		(* Check if hash_shared_at_request is the actual hash of shared_at_request *)
+  		hash(shared_at_request) = hash_shared_at_request && attributes = vprofile (* &&
+		greater(gentime_toea, gentime) *) then (
+
+		event ValidATRequestReceived(shared_at_request);
+		event ValidATRequestReceived2(shared_at_request, v_enrcert);
+
+  		(* Prepare the Authorization validation response for the AA *)
+  		let confirmedattributes = attributes in
+  		let authorization_validation_response = (hash(etsi_data_encrypted_toea), RESPONSE_CODE_0_AUTHVAL, confirmedattributes) in
+
+  		let etsi_data_toaa = (authorization_validation_response) in
+  
+		new gentime_toaa:timestamp;
+  		(* let gentime_toaa = inc(gentime_toea) in *)
+  		let tbsdata_toaa = (gentime_toaa, etsi_data_toaa) in
+  		let etsi_data_signed_toaa = (tbsdata_toaa, hash_cert(ea_cert), sign(tbsdata_toaa, ea_versk)) in
+
+  		let recipient_toaa = (hash_key(k4), NULL_SYMK) in
+  		let etsi_data_encrypted_toaa = (recipient_toaa, senc(etsi_data_signed_toaa, k4)) in
+		
+		event ValidAuthorizationValidationConfirmationSent(v_enrcert, authorization_validation_request);
+		event EAAuthorizationValidationResponseSent(etsi_data_encrypted_toaa);
+		event EAAuthorizingAT(v_enrcert, confirmedattributes);
+
+		event ATResponseSent(shared_at_request);
+  		out(ch, etsi_data_encrypted_toaa);
+		0
+	)(* else(
+		(* ERROR: vehicle signatures and/or hash_shared_at_request are incorrect *)
+		event ErrorMessage(ERROR_wrong_signature_or_hash);
+		(* Prepare a negative validation response for the AA *)
+		let authorization_validation_response = (hash(etsi_data_encrypted_toea), RESPONSE_CODE_1_AUTHVAL, NULL_STRING) in
+		
+		let etsi_data_toaa = (authorization_validation_response) in
+		
+		new gentime_toaa:timestamp;
+  		(* let gentime_toaa = inc(gentime_toea) in *)
+  		let tbsdata_toaa = (gentime_toaa, etsi_data_toaa) in
+  		let etsi_data_signed_toaa = (tbsdata_toaa, hash_cert(ea_cert), sign(tbsdata_toaa, ea_versk)) in
+
+  		let recipient_toaa = (hash_key(k4), NULL_SYMK) in
+  		let etsi_data_encrypted_toaa = (recipient_toaa, senc(etsi_data_signed_toaa, k4)) in
+
+		event EAAuthorizationValidationResponseSent(etsi_data_encrypted_toaa);
+  		out(ch, etsi_data_encrypted_toaa);
+		0
+	) *)
+  ) (* else(
+	(* ERROR: vehicle entry not found in EA_DB_enrollment *)
+	(* Prepare a negative validation response for the AA *)
+	event ErrorMessage(ERROR_enrolled_not_found);
+	let authorization_validation_response = (hash(etsi_data_encrypted_toea), RESPONSE_CODE_1_AUTHVAL, NULL_STRING) in
+		
+	let etsi_data_toaa = (authorization_validation_response) in
+		
+	new gentime_toaa:timestamp;
+  	(* let gentime_toaa = inc(gentime_toea) in *)
+  	let tbsdata_toaa = (gentime_toaa, etsi_data_toaa) in
+  	let etsi_data_signed_toaa = (tbsdata_toaa, hash_cert(ea_cert), sign(tbsdata_toaa, ea_versk)) in
+
+  	let recipient_toaa = (hash_key(k4), NULL_SYMK) in
+  	let etsi_data_encrypted_toaa = (recipient_toaa, senc(etsi_data_signed_toaa, k4)) in
+
+	event EAAuthorizationValidationResponseSent(etsi_data_encrypted_toaa);
+  	out(ch, etsi_data_encrypted_toaa);
+	0
+  ) *)
+.
+
+
+
+let RegisteredVehicle(vid:bitstring, v_sk:skey, ea_cert:certype, aa_cert:certype, attributes:bitstring) =
+
+  new nonce:bitstring;
+
+  (* Enrollment request *)
+  new v_enrsk:skey;
+  let inner_ec_request = (vid, pk(v_enrsk), attributes) in
+
+  new gentime1:timestamp;
+  let tbsdata1 = (gentime1, inner_ec_request) in
+  let etsi_data_signed_1 = (tbsdata1, SELF, sign(tbsdata1, v_enrsk)) in
+
+  let etsi_data = (etsi_data_signed_1) in
+
+  let gentime2 = inc(gentime1) in
+  let tbsdata2 = (gentime2, etsi_data) in
+  let etsi_data_signed_2 = (tbsdata2, SELF, sign(tbsdata2, v_sk)) in
+
+  new k1:symkey;
+  let recipients = (hash_cert(ea_cert), aenc_key(k1, getencpk(ea_cert))) in
+  let etsi_data_encrypted = (recipients, senc(etsi_data_signed_2, k1)) in
+
+  event VehicleEnrolmentRequestSent(etsi_data_encrypted);
+  event VehicleEnrolmentRequestSent2(etsi_data_encrypted, vid);
+  out(ch, etsi_data_encrypted);
+
+  (* Get the Enrollment response *)
+  in(ch, etsi_data_encrypted_response:bitstring);
+
+  let (recipients_response:bitstring, enc_etsi_data_signed_response:bitstring) = etsi_data_encrypted_response in
+  let (hash_k1: hashkeytype, =NULL_SYMK) = recipients_response in
+  if hash_k1 = hash_key(k1) then
+
+  (* Decrypt the response *)
+  let etsi_data_signed_response = sdec(enc_etsi_data_signed_response, k1) in
+  let (tbsdata_resp:bitstring, hash_ea_cert:hashcertype, sign_tbsdata_resp:bitstring) = etsi_data_signed_response in
+  if hash_ea_cert = hash_cert(ea_cert) then
+  (* Verify signature on tbsdata_resp *)
+  if checksign(sign_tbsdata_resp, tbsdata_resp, getverpk(ea_cert)) = ok() then
+
+  let (gentime_resp:timestamp, etsi_data_response:bitstring) = tbsdata_resp in
+  let (inner_ec_response:bitstring) = etsi_data_response in
+  let (hash_etsi_data_encrypted:bitstring, =RESPONSE_CODE_0_ENR, v_enrcert:enrcertype) = inner_ec_response in
+  if hash_etsi_data_encrypted = hash(etsi_data_encrypted) then
+  (* if greater(gentime_resp, gentime2) then *)
+
+  (* Check received certificate *)
+  if checkenrcert(v_enrcert, getverpk(ea_cert)) = ok() then
+  if getenrverpk(v_enrcert) = pk(v_enrsk) then
+  if getenrtype(v_enrcert) = ENR_cert then
+  
+  (* Received a correct enrollment certificate *)
+  event VehicleEnrolmentResponseReceived(etsi_data_encrypted_response);
+  event ValidEnrollmentCertReceived(v_sk, v_enrcert);
+
+  !EnrolledVehicle(v_enrsk, v_enrcert, ea_cert, aa_cert, gentime_resp, attributes)
+.
+
+
+
+let EA_Vehicle(ea_versk:skey, ea_encsk:skey, ea_cert:certype, vid:bitstring, v_pk:pkey, vprofile:bitstring, aa_cert:certype) = 
+
+  in(ch, etsi_data_encrypted:bitstring);
+  
+  let (recipients:bitstring, enc_etsi_data_signed_2:bitstring) = etsi_data_encrypted in
+  let (hash_ea_cert:hashcertype, enc_k1:bitstring) = recipients in
+  (* Check the hash of the recipient *)
+  if hash_ea_cert = hash_cert(ea_cert) then
+  (* Decrypt the symmetric session key *)
+  let k1 = adec_key(enc_k1, ea_encsk) in
+
+  (* Decrypt the message *)
+  let etsi_data_signed_2 = sdec(enc_etsi_data_signed_2, k1) in
+
+  let (tbsdata2:bitstring, =SELF, sign_tbsdata2:bitstring) = etsi_data_signed_2 in
+  let (gentime2:timestamp, etsi_data:bitstring) = tbsdata2 in
+  let (etsi_data_signed_1:bitstring) = etsi_data in
+  let (tbsdata1:bitstring, =SELF, sign_tbsdata1:bitstring) = etsi_data_signed_1 in
+  let (gentime1:timestamp, inner_ec_request:bitstring) = tbsdata1 in
+  let (vid':bitstring, v_enrpk':pkey, attributes:bitstring) = inner_ec_request in
+
+  new nonce:bitstring;
+  event RestrictionEvent(nonce, vid);
+
+  (* Extract v_pk from the DB *)
+  if vid' = vid then (
+
+  	(* Verify signature on tbsdata2 *)
+  	if checksign(sign_tbsdata2, tbsdata2, v_pk) = ok() &&
+  		(* Verify signature on tbsdata1 *)
+  		checksign(sign_tbsdata1, tbsdata1, v_enrpk') = ok() &&
+		attributes = vprofile (* && 
+		greater(gentime2, gentime1) *) then(
+		
+		event EAEnrolmentRequestReceived(etsi_data_encrypted);
+		event EAEnrolmentRequestReceived2(etsi_data_encrypted, vid);
+
+  		(* Prepare the Enrollment response *)
+  		let v_pseudoid = pseudoid(vid) in
+  		let v_enrcert = enrcert(v_pseudoid, v_enrpk', NULL_PK, ea_versk, ENR_cert) in
+		(* out(ch, v_enrcert); *)
+  		let inner_ec_response = (hash(etsi_data_encrypted), RESPONSE_CODE_0_ENR, v_enrcert) in
+		
+		new gentime_resp:timestamp;
+  		(* let gentime_resp = inc(gentime2) in *)
+  		let etsi_data_response = (inner_ec_response) in
+  		let tbsdata_resp = (gentime_resp, etsi_data_response) in
+  		let etsi_data_signed_response = (tbsdata_resp, hash_cert(ea_cert), sign(tbsdata_resp, ea_versk)) in
+
+  		let recipients_response = (hash_key(k1), NULL_SYMK) in
+  		let etsi_data_encrypted_response = (recipients_response, senc(etsi_data_signed_response, k1)) in
+
+		event EAEnrolmentResponseSent(etsi_data_encrypted_response);
+  		event ValidEnrollmentCertSent(v_enrcert);
+		event ValidEnrollmentCertSent2(v_enrcert,  v_enrpk');
+		event ValidEnrollmentCertSent3(v_enrcert, v_pseudoid);
+		event ValidEnrollmentCertSentVehicle(v_enrcert, vid);
+  		out(ch, etsi_data_encrypted_response);
+		
+		!EA_AA(ea_versk, ea_encsk, ea_cert, v_enrcert, vid, vprofile, aa_cert)
+  
+  	) (* else(
+		(* ERROR: vehicle signatures are incorrect *)
+  		(* Prepare the negative response *)
+		event ErrorMessage(ERROR_wrong_singatures_enrollment);
+		let inner_ec_response = (hash(etsi_data_encrypted), RESPONSE_CODE_1_ENR, NULL_CERT) in
+		
+		new gentime_resp:timestamp;
+  		(* let gentime_resp = inc(gentime2) in *)
+		let etsi_data_response = (inner_ec_response) in
+  		let tbsdata_resp = (gentime_resp, etsi_data_response) in
+  		let etsi_data_signed_response = (tbsdata_resp, hash_cert(ea_cert), sign(tbsdata_resp, ea_versk)) in
+
+  		let recipients_response = (hash_key(k1), NULL_SYMK) in
+  		let etsi_data_encrypted_response = (recipients_response, senc(etsi_data_signed_response, k1)) in
+		
+		event EAEnrolmentResponseSent(etsi_data_encrypted_response);
+  		out(ch, etsi_data_encrypted_response);
+		0
+  	) *)
+  )(* else(
+	(* ERROR: vehicle entry not found in EA_DB_registration *)
+	(* Prepare the negative response *)
+	event ErrorMessage(ERROR_registered_not_found);
+	let inner_ec_response = (hash(etsi_data_encrypted), RESPONSE_CODE_1_ENR, NULL_CERT) in
+	
+	new gentime_resp:timestamp;
+  	(* let gentime_resp = inc(gentime2) in *)
+	let etsi_data_response = (inner_ec_response) in
+  	let tbsdata_resp = (gentime_resp, etsi_data_response) in
+  	let etsi_data_signed_response = (tbsdata_resp, hash_cert(ea_cert), sign(tbsdata_resp, ea_versk)) in
+
+  	let recipients_response = (hash_key(k1), NULL_SYMK) in
+  	let etsi_data_encrypted_response = (recipients_response, senc(etsi_data_signed_response, k1)) in
+
+	event EAEnrolmentResponseSent(etsi_data_encrypted_response);
+  	out(ch, etsi_data_encrypted_response);
+	0
+  ) *)
+.
+
+
+process
+
+  (* Create EA certificate *)
+  new ea_versk:skey;
+  new ea_encsk:skey;
+  let ea_cert = cert(EA, pk(ea_versk), pk(ea_encsk), rootca_sk, ENR_cert) in
+  out(ch, ea_cert);
+
+  (* Create AA certificate *)
+  new aa_versk:skey;
+  new aa_encsk:skey;
+  let aa_cert = cert(AA, pk(aa_versk), pk(aa_encsk), rootca_sk, ENR_cert) in
+  out(ch, aa_cert);
+  out(ch, (aa_versk, aa_encsk)); 		(* AA compromise *)
+
+  (* Create vehicle *)
+  new vid:bitstring;
+  new v_sk:skey;
+  new vprofile:bitstring;	(* Same profile as the attacker *)
+  out(ch, pk(v_sk));
+
+  (* Create attacker vehicle *)
+  (* Attacker keys and id declared as free global variables *)
+  out(ch, vprofile);
+  
+  RegisteredVehicle(vid, v_sk, ea_cert, aa_cert, vprofile) |
+  EA_Vehicle(ea_versk, ea_encsk, ea_cert, vid, pk(v_sk), vprofile, aa_cert) |
+  EA_Vehicle(ea_versk, ea_encsk, ea_cert, attvid, pk(att_sk), vprofile , aa_cert) | 
+  !AA_Vehicle_EA(aa_versk, aa_encsk, aa_cert) |
+  !VerifyV2XMessage(aa_cert, vprofile) |
+  !UniquenessCertEnr(ea_cert) |
+  !ValidATReceived(aa_cert)
+
+
+
+
+
+
+
+
+
+
