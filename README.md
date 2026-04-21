@@ -10,6 +10,10 @@ This repository holds the ProVerif models, the full Threat Analysis and Risk Ass
 
 ## Contents
 
+### [`RESULTS.md`](./RESULTS.md) — full per-property verification matrix
+
+The complete 34-property × 5-model pass/fail matrix that the paper summarises in Section VI, together with the list of consequences when the AA or EA is compromised. Organised by protocol phase.
+
 ### `TARA/` — ISO/SAE 21434 TARA outputs (full)
 
 The paper shows only excerpts. This folder contains the full catalogue:
