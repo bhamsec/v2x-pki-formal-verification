@@ -11,11 +11,6 @@ Rows are grouped by the asset the requirement protects. Inline math renders on G
 | P01 | ITS-S registration data must be encrypted and stored in a tamper-resistant HSM to guarantee confidentiality and integrity. Data shall remain within the HSM's secure boundary at all times. Confidentiality: $vid$, $Pri_V$, $profile_V$. Integrity: $vid$, $Pri_V$, $profile_V$, $(IP_{EA}, Cert_{EA})$, $(IP_{AA}, Cert_{AA})$, $Cert_{TrustedAAs}$. |
 | P02 | Canonical ITS-S registration keys must be cryptographically strong: $Pri_V$, $Pub_V$. |
 | P03 | The ITS-S must implement memory-protection mechanisms and access controls to prevent memory exhaustion or overload that could disrupt critical functionalities of the HSM. |
-
-## EA registration data
-
-| ID | Requirement |
-|----|-------------|
 | P04 | EA registration data must be stored in protected memory to guarantee confidentiality and integrity. Data requiring confidentiality and integrity: $Pri_{EA}$. |
 | P05 | EA keys must be cryptographically strong: $Pri_{EA}$, $Pub_{EA}$. |
 | P06 | The EA must implement memory-protection mechanisms and access controls to prevent memory exhaustion or overload that could disrupt critical functionalities. |
@@ -28,7 +23,7 @@ Rows are grouped by the asset the requirement protects. Inline math renders on G
 | P08 | AA keys must be cryptographically strong: $Pri_{AA}$, $Pub_{AA}$. |
 | P09 | The AA must implement memory-protection mechanisms and access controls to prevent memory exhaustion or overload that could disrupt critical functionalities. |
 
-## EA registration database
+## EA registration DB
 
 | ID | Requirement |
 |----|-------------|
@@ -91,7 +86,7 @@ Rows are grouped by the asset the requirement protects. Inline math renders on G
 | P46 | ITS-S enrolment data must be encrypted and stored in a tamper-resistant HSM to guarantee confidentiality and integrity. Data shall remain within the HSM's secure boundary at all times. Confidentiality: $Pri_{Enr}$, $Cert_{Enr}$. Integrity: $Pri_{Enr}$, $Cert_{Enr}$. |
 | P47 | The ITS-S must implement memory-protection mechanisms and access controls to prevent memory exhaustion or overload that could disrupt critical functionalities of the HSM. |
 
-## EA enrolment database
+## EA enrolment DB
 
 | ID | Requirement |
 |----|-------------|
@@ -177,13 +172,23 @@ Rows are grouped by the asset the requirement protects. Inline math renders on G
 | P97 | The AA receiving the authorisation validation response must not be able to identify or profile the ITS-S based on the $services_{conf}$ authorised by the EA. |
 | P98 | The key used to decrypt the authorisation validation response must be accessible only to the legitimate AA that sent the request, ensuring authentication of the recipient. |
 
-## V2X messages
+## Unicast V2X messages
 
 | ID | Requirement |
 |----|-------------|
 | P99 | The content of a confidential V2X unicast message must be encrypted to ensure that only the intended recipient can decrypt it. |
+
+## Broadcast V2X messages
+
+| ID | Requirement |
+|----|-------------|
 | P100 | It must not be possible for any node in the system to deduce the location and the persistent ITS identity of an end-user by analysing broadcast V2X messages. Persistent ITS identities: $vid$ and $pseudoid$ contained in the $Cert_{Enr}$. Exception: AA and EA, but they must collaborate. |
 | P101 | An ITS-S must not include the persistent ITS end-user identity within broadcast V2X messages. These messages must instead include a pseudonymous identity temporarily associated exclusively with the ITS-S. Pseudonymous temporary identity: $pseudoid$ contained in ATs. |
+
+## Unicast and broadcast V2X messages
+
+| ID | Requirement |
+|----|-------------|
 | P102 | Information contained in broadcast or unicast V2X messages must be digitally signed by the sender ITS-S to ensure authentication and to prevent undetected modification. Signed using $Pub_{AT}$ of the currently active AT. |
 | P103 | An ITS-S can only have one AT per specific service active at a time. |
 | P104 | Active ATs attached to V2X messages must be changed regularly to prevent long-term linkability. |
