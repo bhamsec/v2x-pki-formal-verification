@@ -6,26 +6,38 @@ Formal verification artefact accompanying the paper
 > Simone Bussa, Daniel Clark, Tom Chothia, Luca Arnaboldi.
 > Submitted to ESORICS 2026.
 
-This repository holds the ProVerif models, the full Threat Analysis and Risk Assessment (TARA) outputs, and the complete requirements catalogue that the paper summarises. The paper refers here for message-level details and the complete P01–P106 list.
+This repository holds the ProVerif models, the full Threat Analysis and Risk Assessment (TARA) outputs, and the complete security requirements catalogue that the paper summarises. The paper refers here for all tabular detail the paper itself does not carry: verification outcomes, the full TARA derivation, and the complete P01–P106 requirements list.
 
 ## Contents
 
-### [`RESULTS.md`](./RESULTS.md) — full per-property verification matrix
+### Quick links
 
-The complete 34-property × 5-model pass/fail matrix that the paper summarises in Section VI, together with the list of consequences when the AA or EA is compromised. Organised by protocol phase.
+| | What | Where |
+|-|------|-------|
+| Verification results | Per-property × per-model pass/fail matrix + CA-compromise footnotes | [`RESULTS.md`](./RESULTS.md) |
+| Security requirements | Full P01–P106 list (browsable) | [`REQUIREMENTS.md`](./REQUIREMENTS.md) |
+| Security requirements (PDF) | Same list, as rendered in the original deliverable | [`TARA/04_Security_privacy_requirements.pdf`](./TARA/04_Security_privacy_requirements.pdf) |
+| Asset inventory | Complete asset list (A-series) | [`TARA/01_Asset_identification.pdf`](./TARA/01_Asset_identification.pdf) |
+| Damage scenarios | With safety/operations/financial/privacy impact scoring (DS-series) | [`TARA/02_Damage_scenarios.xlsx`](./TARA/02_Damage_scenarios.xlsx) |
+| Threat scenarios | STRIDE-derived threats (TS-series) | [`TARA/03_Threat_identification.pdf`](./TARA/03_Threat_identification.pdf) |
+| ProVerif sources | 5 models + per-attack variants | [`proverif-models/`](./proverif-models/) |
 
-### `TARA/` — ISO/SAE 21434 TARA outputs (full)
+### [`RESULTS.md`](./RESULTS.md)
 
-The paper shows only excerpts. This folder contains the full catalogue:
+The complete 34-property × 5-model verification matrix that the paper summarises in Section 6, grouped by protocol phase, together with the list of consequences when the AA or EA is compromised.
 
-| File | Contents |
-|------|----------|
-| `01_Asset_identification.pdf` | Complete asset inventory (A-series) |
-| `02_Damage_scenarios.xlsx` | Damage scenarios with safety / operational / financial / privacy impact scoring (DS-series) |
-| `03_Threat_identification.pdf` | STRIDE-derived threats against the V2X PKI (TS-series) |
-| `04_Security_privacy_requirements.pdf` | Full P01–P106 security and privacy requirements |
+### [`REQUIREMENTS.md`](./REQUIREMENTS.md)
 
-### `proverif-models/` — ProVerif sources
+The complete P01–P106 security and privacy requirements catalogue derived via TARA (ISO/SAE 21434). Grouped by protected asset. Browsable on GitHub; the rendered PDF version is [`TARA/04_Security_privacy_requirements.pdf`](./TARA/04_Security_privacy_requirements.pdf).
+
+### `TARA/` — ISO/SAE 21434 outputs
+
+- **`01_Asset_identification.pdf`** — full asset inventory (A-series): registration, enrolment, authorisation data for each actor (ITS-S, EA, AA), plus authorisation and authorisation-validation requests and responses. Each asset is tagged with the Confidentiality / Integrity / Availability properties it requires.
+- **`02_Damage_scenarios.xlsx`** — damage scenarios (DS-series): operational context, compromise type, unwanted behaviour, consequence, and a four-axis impact score (safety, operations, financial, privacy) on {Negligible, Moderate, Severe}.
+- **`03_Threat_identification.pdf`** — threat scenarios (TS-series): STRIDE-classified threats tied to specific assets and properties. Generated with the Microsoft Threat Modelling Tool.
+- **`04_Security_privacy_requirements.pdf`** — the rendered PDF of the full P01–P106 list (same content as [`REQUIREMENTS.md`](./REQUIREMENTS.md)).
+
+### [`proverif-models/`](./proverif-models/)
 
 Five formal models of ETSI 102 940, plus per-attack variants.
 
